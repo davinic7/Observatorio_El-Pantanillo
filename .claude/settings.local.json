@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem -Recurse -Force -File | Where-Object { $_.FullName -notmatch 'node_modules' } | Select-Object @{N='Path';E={$_.FullName.Replace\\($PWD.Path + '\\\\', ''\\)}} | Sort-Object Path | Format-Table -AutoSize -Wrap)",
+      "Bash(npm install *)",
+      "Bash(python _migrate_pdo.py)",
+      "Bash(python _migrate_api_url.py)",
+      "Bash(grep -E \"\\(^|/\\)\\\\.env$\")"
+    ]
+  }
+}
