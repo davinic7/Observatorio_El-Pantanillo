@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 load_env(__DIR__ . '/.env');
-require_jwt($_ENV['JWT_SECRET'] ?? '');
+require_jwt(env_value('JWT_SECRET', ''));
 
 try {
     $pdo = get_db_connection();
@@ -38,7 +38,6 @@ try {
             "lotes_por_estado"  => $lotesPorEstado,
         ],
     ]);
-} catch (PDOException $e) {
-    http_response_code(500);
-    echo json_encode(["status" => "error", "mensaje" => $e->getMessage()]);
+} catch (Throwable $e) {
+    respond_error(500, 'Error interno del servidor.', $e);
 }

@@ -13,53 +13,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405);
-    echo json_encode([
-        "status" => "error",
-        "mensaje" => "Método no permitido. Use POST."
-    ]);
-    exit;
-}
+// Carga .env si existe (local). En Render no hay archivo y las vars vienen del entorno.
+load_env(__DIR__ . '/.env');
 
-$rawBody = file_get_contents('php://input');
-$payload = json_decode($rawBody, true);
-
-if (!is_array($payload)) {
-    $payload = $_POST;
-}
-
-$email = isset($payload['email']) ? trim((string) $payload['email']) : '';
-$password = isset($payload['password']) ? (string) $payload['password'] : '';
-
-if ($email === '' || $password === '') {
-    http_response_code(400);
-    echo json_encode([
-        "status" => "error",
-        "mensaje" => "Email y contraseña son obligatorios."
-    ]);
-    exit;
-}
-
-$envPath = __DIR__ . '/.env';
-if (!file_exists($envPath)) {
-    http_response_code(500);
-    echo json_encode([
-        "status" => "error",
-        "mensaje" => "No se encuentra el archivo .env"
-    ]);
-    exit;
-}
-
-$lines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-foreach ($lines as $line) {
-    if (strpos(trim($line), '#') === 0) continue;
-    if (!str_contains($line, '=')) continue;
-    list($name, $value) = explode('=', $line, 2);
-    $_ENV[trim($name)] = trim($value);
-}
+$debug = strtolower((string) env_value('APP_DEBUG', '')) === 'true';
 
 try {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        http_response_code(405);
+        echo json_encode([
+            "status"  => "error",
+            "mensaje" => "Método no permitido. Use POST."
+        ]);
+        exit;
+    }
+
+    $rawBody = file_get_contents('php://input');
+    $payload = json_decode($rawBody, true);
+    if (!is_array($payload)) {
+        $payload = $_POST;
+    }
+
+    $email    = isset($payload['email']) ? trim((string) $payload['email']) : '';
+    $password = isset($payload['password']) ? (string) $payload['password'] : '';
+
+    if ($email === '' || $password === '') {
+        http_response_code(400);
+        echo json_encode([
+            "status"  => "error",
+            "mensaje" => "Email y contraseña son obligatorios."
+        ]);
+        exit;
+    }
+
+    $jwtSecret = env_value('JWT_SECRET', '');
+    if ($jwtSecret === '') {
+        http_response_code(500);
+        echo json_encode([
+            "status"  => "error",
+            "mensaje" => "JWT_SECRET no está configurado en el entorno."
+        ]);
+        exit;
+    }
+
     $pdo = get_db_connection();
     $stmt = $pdo->prepare(
         "SELECT id, email, rol, password_hash FROM usuarios WHERE email = :email LIMIT 1"
@@ -70,18 +66,8 @@ try {
     if (!$usuario || !password_verify($password, $usuario['password_hash'])) {
         http_response_code(401);
         echo json_encode([
-            "status" => "error",
+            "status"  => "error",
             "mensaje" => "Credenciales inválidas"
-        ]);
-        exit;
-    }
-
-    $jwtSecret = $_ENV['JWT_SECRET'] ?? '';
-    if ($jwtSecret === '') {
-        http_response_code(500);
-        echo json_encode([
-            "status" => "error",
-            "mensaje" => "JWT_SECRET no está configurado en .env"
         ]);
         exit;
     }
@@ -101,12 +87,25 @@ try {
             "email" => $usuario['email'],
             "rol"   => $usuario['rol'],
         ],
-        "token" => $token
+        "token" => $token,
     ]);
-} catch (PDOException $e) {
+} catch (Throwable $e) {
+    // Log siempre al error log del servidor (visible en Render Logs).
+    error_log('[login.php] ' . $e::class . ': ' . $e->getMessage()
+        . ' en ' . $e->getFile() . ':' . $e->getLine());
+
     http_response_code(500);
-    echo json_encode([
-        "status" => "error",
-        "mensaje" => "Error en la autenticación: " . $e->getMessage()
-    ]);
+    $body = [
+        "status"  => "error",
+        "mensaje" => "Error interno del servidor.",
+    ];
+    if ($debug) {
+        $body['debug'] = [
+            "type"    => $e::class,
+            "message" => $e->getMessage(),
+            "file"    => basename($e->getFile()),
+            "line"    => $e->getLine(),
+        ];
+    }
+    echo json_encode($body);
 }

@@ -26,7 +26,6 @@ try {
     $rows = $stmt->fetchAll();
 
     echo json_encode(["status" => "ok", "total" => count($rows), "data" => $rows]);
-} catch (PDOException $e) {
-    http_response_code(500);
-    echo json_encode(["status" => "error", "mensaje" => $e->getMessage()]);
+} catch (Throwable $e) {
+    respond_error(500, 'Error interno del servidor.', $e);
 }

@@ -17,6 +17,31 @@ function env_value(string $key, ?string $fallback = null): ?string
     return $fallback;
 }
 
+/**
+ * Responde con un error JSON. Si APP_DEBUG=true en el entorno y se pasa una
+ * excepción, agrega un bloque "debug" con el detalle real. Siempre loguea
+ * la excepción al error_log para verla en Render Logs.
+ */
+function respond_error(int $code, string $message, ?Throwable $e = null): void
+{
+    if ($e !== null) {
+        error_log('[api] ' . get_class($e) . ': ' . $e->getMessage()
+            . ' en ' . $e->getFile() . ':' . $e->getLine());
+    }
+    $debug = strtolower((string) env_value('APP_DEBUG', '')) === 'true';
+    http_response_code($code);
+    $body = ["status" => "error", "mensaje" => $message];
+    if ($debug && $e !== null) {
+        $body['debug'] = [
+            "type"    => get_class($e),
+            "message" => $e->getMessage(),
+            "file"    => basename($e->getFile()),
+            "line"    => $e->getLine(),
+        ];
+    }
+    echo json_encode($body);
+}
+
 function get_db_connection(): PDO
 {
     static $pdo = null;

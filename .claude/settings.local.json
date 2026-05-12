@@ -5,7 +5,11 @@
       "Bash(npm install *)",
       "Bash(python _migrate_pdo.py)",
       "Bash(python _migrate_api_url.py)",
-      "Bash(grep -E \"\\(^|/\\)\\\\.env$\")"
+      "Bash(grep -E \"\\(^|/\\)\\\\.env$\")",
+      "Bash(grep -rn '\\\\$_ENV\\\\[' '*.php')",
+      "Bash(python _refactor_endpoints.py)",
+      "Bash(python _refactor_specialized.py)",
+      "Bash(grep -n '\\\\$_ENV\\\\[' '*.php')"
     ]
   }
 }

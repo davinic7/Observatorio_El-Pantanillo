@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 load_env(__DIR__ . '/.env');
-require_jwt($_ENV['JWT_SECRET'] ?? '');
+require_jwt(env_value('JWT_SECRET', ''));
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -110,7 +110,7 @@ try {
             "id"      => (int) $stmt->fetchColumn(),
         ]);
     }
-} catch (PDOException $e) {
+} catch (Throwable $e) {
     if ($e->getCode() === '23503') {
         http_response_code(400);
         echo json_encode([
@@ -119,6 +119,5 @@ try {
         ]);
         exit;
     }
-    http_response_code(500);
-    echo json_encode(["status" => "error", "mensaje" => $e->getMessage()]);
+    respond_error(500, 'Error interno del servidor.', $e);
 }

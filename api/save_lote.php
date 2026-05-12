@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 load_env(__DIR__ . '/.env');
-require_jwt($_ENV['JWT_SECRET'] ?? '');
+require_jwt(env_value('JWT_SECRET', ''));
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -82,7 +82,7 @@ try {
         "mensaje" => "Lote registrado exitosamente.",
         "id"      => $newId
     ]);
-} catch (PDOException $e) {
+} catch (Throwable $e) {
     // 23505 = unique_violation en PostgreSQL
     if ($e->getCode() === '23505') {
         http_response_code(409);
@@ -93,9 +93,5 @@ try {
         exit;
     }
 
-    http_response_code(500);
-    echo json_encode([
-        "status" => "error",
-        "mensaje" => "Error al guardar el lote: " . $e->getMessage()
-    ]);
+    respond_error(500, 'Error interno del servidor.', $e);
 }
