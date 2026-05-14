@@ -9,7 +9,8 @@
       "Bash(grep -rn '\\\\$_ENV\\\\[' '*.php')",
       "Bash(python _refactor_endpoints.py)",
       "Bash(python _refactor_specialized.py)",
-      "Bash(grep -n '\\\\$_ENV\\\\[' '*.php')"
+      "Bash(grep -n '\\\\$_ENV\\\\[' '*.php')",
+      "Bash(php api/_run_seed.php)"
     ]
   }
 }

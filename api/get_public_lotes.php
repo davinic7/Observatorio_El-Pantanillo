@@ -17,11 +17,18 @@ load_env(__DIR__ . '/.env');
 
 try {
     $pdo = get_db_connection();
+    // Solo unimos empresas que estén APROBADAS por un gestor; las pendientes
+    // o rechazadas no se muestran en el mapa público.
+    // empresa_id se devuelve para que el frontend pueda diferenciar "lote libre"
+    // (sin empresa asignada) del "modo inversor".
     $stmt = $pdo->query(
-        "SELECT l.id, l.numero_lote, l.estado, l.geometria_terreno,
-                e.razon_social AS propietario_nombre
+        "SELECT l.id, l.numero_lote, l.sector, l.superficie_m2,
+                l.estado, l.geometria_terreno, l.empresa_id,
+                COALESCE(e.nombre_empresa, e.razon_social) AS propietario_nombre
            FROM lotes l
-           LEFT JOIN empresas e ON l.empresa_id = e.id
+           LEFT JOIN empresas e
+                  ON l.empresa_id = e.id
+                 AND e.estado_verificacion = 'aprobado'
           ORDER BY l.id ASC"
     );
     $lotes = $stmt->fetchAll();

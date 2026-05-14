@@ -195,7 +195,12 @@ function NovedadCard({ novedad, onClickLeer }) {
   );
 }
 
-export default function LandingPage({ onLoginClick, onVerMasNoticias }) {
+export default function LandingPage({
+  onLoginClick,
+  onVerMasNoticias,
+  onRegistroClick,
+  onSolicitarRadicacion,
+}) {
   const [lotes, setLotes] = useState([]);
   const [siteConfig, setSiteConfig] = useState(() => {
     // Cache instantáneo desde localStorage para renderizar al toque.
@@ -260,18 +265,33 @@ export default function LandingPage({ onLoginClick, onVerMasNoticias }) {
               {institucion}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onLoginClick}
-            className="shrink-0 inline-flex items-center gap-2 text-sm font-medium text-cream border border-cream/40 hover:bg-cream/10 hover:border-cream px-4 py-2 rounded-md transition-colors"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-              <polyline points="10 17 15 12 10 7" />
-              <line x1="15" y1="12" x2="3" y2="12" />
-            </svg>
-            Acceso Gestores
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            {onRegistroClick && (
+              <button
+                type="button"
+                onClick={onRegistroClick}
+                className="hidden sm:inline-flex items-center gap-2 text-sm font-medium bg-cream text-sage hover:bg-cream/90 px-4 py-2 rounded-md shadow-sm transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                Registrá tu empresa
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onLoginClick}
+              className="inline-flex items-center gap-2 text-sm font-medium text-cream border border-cream/40 hover:bg-cream/10 hover:border-cream px-4 py-2 rounded-md transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                <polyline points="10 17 15 12 10 7" />
+                <line x1="15" y1="12" x2="3" y2="12" />
+              </svg>
+              <span className="hidden sm:inline">Acceso Gestores</span>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -315,7 +335,10 @@ export default function LandingPage({ onLoginClick, onVerMasNoticias }) {
               <div className="h-[360px] sm:h-[420px] bg-sage/5 animate-pulse" />
             </div>
           ) : (
-            <MapaParque lotes={lotes} />
+            <MapaParque
+              lotes={lotes}
+              onSolicitarRadicacion={onSolicitarRadicacion || onRegistroClick}
+            />
           )}
         </div>
       </section>
@@ -356,6 +379,34 @@ export default function LandingPage({ onLoginClick, onVerMasNoticias }) {
                 </button>
               </div>
             )}
+          </div>
+        </section>
+      )}
+
+      {onRegistroClick && (
+        <section className="py-10 sm:py-14 bg-sage/10 border-t border-sage/15">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
+            <span className="inline-block text-xs uppercase tracking-widest text-moss font-semibold mb-2">
+              Padrón provincial
+            </span>
+            <h3 className="font-serif text-2xl sm:text-3xl text-bark mb-3">
+              ¿Tenés una empresa y querés sumarte al parque?
+            </h3>
+            <p className="text-sm text-bark/70 mb-6 leading-relaxed">
+              Completá el formulario en 3 pasos. Un gestor del observatorio va a revisar tu solicitud
+              y, una vez aprobada, tu empresa aparecerá en el mapa público.
+            </p>
+            <button
+              type="button"
+              onClick={onRegistroClick}
+              className="inline-flex items-center gap-2 bg-sage text-cream text-sm font-medium px-6 py-3 rounded-lg shadow-sm hover:bg-moss transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Registrá tu empresa
+            </button>
           </div>
         </section>
       )}

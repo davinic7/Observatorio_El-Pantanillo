@@ -11,10 +11,13 @@ import NovedadesTable from './components/NovedadesTable';
 import ConsultasTable from './components/ConsultasTable';
 import DDJJTable from './components/DDJJTable';
 import NoticiasPage from './pages/NoticiasPage';
+import RegistroEmpresa from './components/RegistroEmpresa';
+import SolicitudesAdmin from './components/SolicitudesAdmin';
 import { API_URL } from './utils/apiUrl';
 
 const SIDEBAR_LINKS = [
   { label: 'Dashboard', tab: 'dashboard' },
+  { label: 'Solicitudes', tab: 'solicitudes', badgeKey: 'empresas_pendientes', badgeColor: 'orange' },
   { label: 'Empresas', tab: 'empresas' },
   { label: 'Declaraciones', tab: 'ddjj' },
   { label: 'Novedades', tab: 'novedades' },
@@ -80,12 +83,12 @@ function Sidebar({ open, onClose, activeTab, onSelectTab, badges = {} }) {
       {open && (
         <div
           onClick={onClose}
-          className="md:hidden fixed inset-0 top-16 bg-bark/40 z-10"
+          className="md:hidden fixed inset-0 top-16 bg-bark/40 z-40"
           aria-hidden="true"
         />
       )}
       <aside
-        className={`fixed top-16 bottom-0 left-0 w-64 bg-moss text-cream z-20 px-4 py-6 transform transition-transform duration-200 ease-out md:translate-x-0 ${
+        className={`fixed top-16 bottom-0 left-0 w-64 bg-moss text-cream z-50 px-4 py-6 transform transition-transform duration-200 ease-out md:translate-x-0 ${
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -93,6 +96,7 @@ function Sidebar({ open, onClose, activeTab, onSelectTab, badges = {} }) {
           {SIDEBAR_LINKS.map((link) => {
             const isActive = link.tab === activeTab;
             const badgeCount = link.badgeKey ? badges[link.badgeKey] : 0;
+            const badgeBg = link.badgeColor === 'orange' ? 'bg-orange-500' : 'bg-red-500';
             return (
               <button
                 key={link.label}
@@ -109,7 +113,7 @@ function Sidebar({ open, onClose, activeTab, onSelectTab, badges = {} }) {
               >
                 <span>{link.label}</span>
                 {badgeCount > 0 && (
-                  <span className="ml-2 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold">
+                  <span className={`ml-2 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full ${badgeBg} text-white text-[10px] font-bold`}>
                     {badgeCount > 99 ? '99+' : badgeCount}
                   </span>
                 )}
@@ -193,7 +197,10 @@ function Layout({ onLogout, user, token, activeTab, setActiveTab }) {
       return null;
     }
   });
-  const [badges, setBadges] = useState({ consultas_sin_leer: 0 });
+  const [badges, setBadges] = useState({
+    consultas_sin_leer: 0,
+    empresas_pendientes: 0,
+  });
   const triggerRefresh = () => setRefreshTrigger((prev) => prev + 1);
 
   useEffect(() => {
@@ -206,7 +213,8 @@ function Layout({ onLogout, user, token, activeTab, setActiveTab }) {
       .then((j) => {
         if (!cancelled && j?.status === 'ok' && j.data) {
           setBadges({
-            consultas_sin_leer: j.data.consultas_sin_leer ?? 0,
+            consultas_sin_leer:  j.data.consultas_sin_leer ?? 0,
+            empresas_pendientes: j.data.empresas_pendientes ?? 0,
           });
         }
       })
@@ -309,7 +317,16 @@ function Layout({ onLogout, user, token, activeTab, setActiveTab }) {
             />
           </main>
         )}
-        {activeTab !== 'empresas' && activeTab !== 'configuracion' && activeTab !== 'novedades' && activeTab !== 'consultas' && activeTab !== 'ddjj' && (
+        {activeTab === 'solicitudes' && (
+          <main className="min-h-[calc(100vh-4rem)] px-4 sm:px-6 md:px-8 py-6 sm:py-10">
+            <SolicitudesAdmin
+              token={token}
+              onUnauthorized={onLogout}
+              onDataChange={triggerRefresh}
+            />
+          </main>
+        )}
+        {activeTab !== 'empresas' && activeTab !== 'configuracion' && activeTab !== 'novedades' && activeTab !== 'consultas' && activeTab !== 'ddjj' && activeTab !== 'solicitudes' && (
           <Dashboard
             token={token}
             onUnauthorized={onLogout}
@@ -331,7 +348,8 @@ export default function App() {
   const [authToken, setAuthToken] = useState(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showLogin, setShowLogin] = useState(false);
-  const [publicView, setPublicView] = useState('landing'); // 'landing' | 'noticias'
+  const [publicView, setPublicView] = useState('landing'); // 'landing' | 'noticias' | 'registro'
+  const [loteDeInteres, setLoteDeInteres] = useState(null);
 
   function handleLogin({ user, token }) {
     setCurrentUser(user);
@@ -355,10 +373,31 @@ export default function App() {
     if (publicView === 'noticias') {
       return <NoticiasPage onBack={() => setPublicView('landing')} />;
     }
+    if (publicView === 'registro') {
+      return (
+        <RegistroEmpresa
+          lotePreseleccionado={loteDeInteres}
+          onBack={() => {
+            setLoteDeInteres(null);
+            setPublicView('landing');
+          }}
+          onCompleted={() => setLoteDeInteres(null)}
+          onLoginClick={() => setShowLogin(true)}
+        />
+      );
+    }
     return (
       <LandingPage
         onLoginClick={() => setShowLogin(true)}
         onVerMasNoticias={() => setPublicView('noticias')}
+        onRegistroClick={() => {
+          setLoteDeInteres(null);
+          setPublicView('registro');
+        }}
+        onSolicitarRadicacion={(lote) => {
+          setLoteDeInteres(lote || null);
+          setPublicView('registro');
+        }}
       />
     );
   }

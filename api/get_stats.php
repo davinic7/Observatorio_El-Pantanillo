@@ -27,8 +27,9 @@ try {
         $lotesPorEstado[strtolower(trim((string) $row['estado']))] = (int) $row['cantidad'];
     }
 
-    $novedadesActivas = 0;
-    $consultasSinLeer = 0;
+    $novedadesActivas   = 0;
+    $consultasSinLeer   = 0;
+    $empresasPendientes = 0;
     try {
         $novedadesActivas = (int) $pdo
             ->query("SELECT COUNT(*) FROM novedades WHERE activo = true")
@@ -43,15 +44,23 @@ try {
     } catch (PDOException $_) {
         $consultasSinLeer = 0;
     }
+    try {
+        $empresasPendientes = (int) $pdo
+            ->query("SELECT COUNT(*) FROM empresas WHERE estado_verificacion = 'pendiente'")
+            ->fetchColumn();
+    } catch (PDOException $_) {
+        $empresasPendientes = 0;
+    }
 
     echo json_encode([
         "status" => "ok",
         "data"   => [
-            "total_empresas"     => $totalEmpresas,
-            "total_lotes"        => $totalLotes,
-            "lotes_por_estado"   => $lotesPorEstado,
-            "novedades_activas"  => $novedadesActivas,
-            "consultas_sin_leer" => $consultasSinLeer,
+            "total_empresas"      => $totalEmpresas,
+            "total_lotes"         => $totalLotes,
+            "lotes_por_estado"    => $lotesPorEstado,
+            "novedades_activas"   => $novedadesActivas,
+            "consultas_sin_leer"  => $consultasSinLeer,
+            "empresas_pendientes" => $empresasPendientes,
         ],
     ]);
 } catch (Throwable $e) {
